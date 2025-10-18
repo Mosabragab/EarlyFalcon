@@ -1,0 +1,20 @@
+{
+  "name": "falcon-indicator-service",
+  "version": "1.0.0",
+  "description": "Calculate technical indicators for Early Falcon v8.2",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "technicalindicators": "^3.1.0",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
