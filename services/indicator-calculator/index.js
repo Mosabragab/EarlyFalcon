@@ -46,12 +46,23 @@ async function fetchLatestCandle(symbol) {
     const response = await fetch(url)
     const data = await response.json()
     
-    if (data.error?.length > 0) return null
+    if (data.error?.length > 0) {
+      console.error(`❌ ${symbol}: Kraken API error: ${data.error.join(', ')}`)
+      return null
+    }
     
     const pairKey = Object.keys(data.result).find(k => k !== 'last')
-    if (!pairKey) return null
+    if (!pairKey) {
+      console.error(`❌ ${symbol}: No data key in response`)
+      return null
+    }
     
     const candles = data.result[pairKey]
+    if (!candles || candles.length === 0) {
+      console.error(`❌ ${symbol}: Empty candles array`)
+      return null
+    }
+    
     const latest = candles[candles.length - 1]
     
     return {
@@ -65,6 +76,7 @@ async function fetchLatestCandle(symbol) {
       volume: parseFloat(latest[6])
     }
   } catch (error) {
+    console.error(`❌ ${symbol}: ${error.message}`)
     return null
   }
 }
@@ -75,7 +87,10 @@ async function updateCandles() {
   
   for (const symbol of SYMBOLS) {
     const candle = await fetchLatestCandle(symbol)
-    if (!candle) continue
+    if (!candle) {
+      await new Promise(r => setTimeout(r, 1100))
+      continue
+    }
     
     const { error } = await supabase
       .from('market_data_ohlcv')
@@ -84,7 +99,11 @@ async function updateCandles() {
         ignoreDuplicates: true 
       })
     
-    if (!error) updated++
+    if (error) {
+      console.error(`❌ ${symbol}: Supabase error: ${error.message}`)
+    } else {
+      updated++
+    }
     await new Promise(r => setTimeout(r, 1100))
   }
   
@@ -156,7 +175,6 @@ async function calculateIndicators() {
             atr: atr || null
           }, { onConflict: 'symbol,timestamp,interval' })
 
-        console.log(`✅ ${symbol}: RSI=${rsi?.toFixed(2)} @ ${new Date(latestCandle.timestamp).toLocaleTimeString()}`)
         successCount++
 
       } catch (error) {
